@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitmovin Player Playground</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --border-color: #334155;
+            --input-bg: #0f172a;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            width: 100%;
+            padding: 24px;
+            text-align: center;
+            background-color: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 32px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 1000px;
+            gap: 24px;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+
+        .controls {
+            background-color: var(--panel-bg);
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        input, select {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--accent);
+        }
+
+        button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            grid-column: 1 / -1;
+            margin-top: 8px;
+        }
+
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .player-wrapper {
+            background-color: var(--panel-bg);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+            position: relative;
+        }
+
+        #player-container {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background-color: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        
+        .empty-state {
+            position: absolute;
+            color: var(--text-muted);
+            font-size: 16px;
+            pointer-events: none;
+        }
+
+        .error-message {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ef4444;
+            display: none;
+            grid-column: 1 / -1;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Bitmovin Player Playground</h1>
+    </header>
+
+    <div class="container">
+        <div class="controls">
+            <div id="error-box" class="error-message"></div>
+
+            <div class="control-group">
+                <label for="player-version">Player Version</label>
+                <input type="text" id="player-version" value="8" placeholder="e.g. 8, 8.180.0, 8.170.0">
+            </div>
+
+            <div class="control-group">
+                <label for="stream-type">Stream Type</label>
+                <select id="stream-type">
+                    <option value="hls">HLS</option>
+                    <option value="dash">DASH</option>
+                    <option value="progressive">Progressive (MP4)</option>
+                </select>
+            </div>
+
+            <div class="control-group full-width">
+                <label for="stream-url">Stream URL</label>
+                <input type="text" id="stream-url" value="https://bitmovin-a.akamaihd.net/content/MI201109210084_1/m3u8s/f08e80da-bf1d-4e3d-8899-f0f6155f6efa.m3u8">
+            </div>
+
+            <div class="control-group full-width">
+                <label for="license-key">License Key (Optional for localhost)</label>
+                <input type="text" id="license-key" placeholder="Your Bitmovin Player License Key">
+            </div>
+
+            <button id="load-btn">Load Player</button>
+        </div>
+
+        <div class="player-wrapper">
+            <div id="empty-state" class="empty-state">Click "Load Player" to initialize</div>
+            <div id="player-container" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        let playerInstance = null;
+        let isPlayerLoading = false;
+
+        function showError(msg) {
+            const errorBox = document.getElementById('error-box');
+            errorBox.textContent = msg;
+            errorBox.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('error-box').style.display = 'none';
+        }
+
+        document.getElementById('load-btn').addEventListener('click', () => {
+            if (isPlayerLoading) return;
+
+            hideError();
+            
+            const version = document.getElementById('player-version').value.trim() || '8';
+            const licenseKey = document.getElementById('license-key').value.trim();
+            const streamUrl = document.getElementById('stream-url').value.trim();
+            const streamType = document.getElementById('stream-type').value;
+
+            if (!streamUrl) {
+                showError('Please provide a stream URL.');
+                return;
+            }
+
+            isPlayerLoading = true;
+            const btn = document.getElementById('load-btn');
+            btn.textContent = 'Loading...';
+            btn.style.opacity = '0.7';
+
+            // Clean up existing player
+            if (playerInstance) {
+                try {
+                    playerInstance.destroy();
+                } catch (e) {
+                    console.warn('Error destroying player:', e);
+                }
+                playerInstance = null;
+            }
+
+            // Remove old script if exists
+            const oldScript = document.getElementById('bitmovin-script');
+            if (oldScript) {
+                oldScript.remove();
+                // We should also remove the bitmovin global to force reload of the new version script
+                if (window.bitmovin) {
+                    delete window.bitmovin;
+                }
+            }
+
+            const script = document.createElement('script');
+            script.id = 'bitmovin-script';
+            script.src = `https://cdn.bitmovin.com/player/web/${version}/bitmovinplayer.js`;
+            
+            script.onload = () => {
+                if (!window.bitmovin || !window.bitmovin.player) {
+                    showError(`Failed to load Bitmovin Player version ${version}. Ensure the version exists.`);
+                    resetButton();
+                    return;
+                }
+
+                document.getElementById('empty-state').style.display = 'none';
+                document.getElementById('player-container').style.display = 'block';
+
+                const config = {
+                    key: licenseKey || undefined,
+                    playback: {
+                        autoplay: true
+                    }
+                };
+                
+                const container = document.getElementById('player-container');
+                try {
+                    playerInstance = new bitmovin.player.Player(container, config);
+                    
+                    const source = {};
+                    if (streamType === 'hls') {
+                        source.hls = streamUrl;
+                    } else if (streamType === 'dash') {
+                        source.dash = streamUrl;
+                    } else if (streamType === 'progressive') {
+                        source.progressive = streamUrl;
+                    }
+
+                    playerInstance.load(source).then(() => {
+                        console.log('Successfully loaded source');
+                        resetButton();
+                    }).catch((err) => {
+                        console.error('Error loading source:', err);
+                        showError('Error loading source: ' + (err.message || 'Unknown error'));
+                        resetButton();
+                    });
+                } catch (err) {
+                    console.error('Error initializing player:', err);
+                    showError('Error initializing player: ' + err.message);
+                    resetButton();
+                }
+            };
+
+            script.onerror = () => {
+                showError(`Failed to load Bitmovin Player version ${version} from CDN. Ensure the version exists.`);
+                resetButton();
+            };
+
+            document.head.appendChild(script);
+
+            function resetButton() {
+                isPlayerLoading = false;
+                btn.textContent = 'Load Player';
+                btn.style.opacity = '1';
+            }
+        });
+    </script>
+</body>
+</html>
