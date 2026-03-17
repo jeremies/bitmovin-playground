@@ -80,7 +80,7 @@
             font-weight: 500;
         }
 
-        input, select {
+        input, select, textarea {
             background-color: var(--input-bg);
             border: 1px solid var(--border-color);
             color: var(--text-main);
@@ -92,7 +92,13 @@
             font-family: 'Inter', sans-serif;
         }
 
-        input:focus, select:focus {
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+            font-family: monospace;
+        }
+
+        input:focus, select:focus, textarea:focus {
             border-color: var(--accent);
         }
 
@@ -191,6 +197,11 @@
                 <input type="text" id="license-key" placeholder="Your Bitmovin Player License Key">
             </div>
 
+            <div class="control-group full-width">
+                <label for="player-config">Player Configuration (JSON)</label>
+                <textarea id="player-config" placeholder='{&#10;  "playback": {&#10;    "autoplay": true&#10;  }&#10;}'></textarea>
+            </div>
+
             <button id="load-btn">Load Player</button>
         </div>
 
@@ -268,12 +279,29 @@
                 document.getElementById('empty-state').style.display = 'none';
                 document.getElementById('player-container').style.display = 'block';
 
-                const config = {
+                let customConfig = {};
+                const configStr = document.getElementById('player-config').value.trim();
+                if (configStr) {
+                    try {
+                        customConfig = JSON.parse(configStr);
+                    } catch (err) {
+                        showError('Invalid JSON in Player Configuration: ' + err.message);
+                        resetButton();
+                        return;
+                    }
+                }
+
+                const config = Object.assign({
                     key: licenseKey || undefined,
                     playback: {
                         autoplay: true
                     }
-                };
+                }, customConfig);
+                
+                // Ensure key is preserved if provided in the input but not in config JSON
+                if (licenseKey && !config.key) {
+                    config.key = licenseKey;
+                }
                 
                 const container = document.getElementById('player-container');
                 try {
