@@ -6,25 +6,17 @@
     <title>Bitmovin Player Playground</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-color: #0f172a;
-            --panel-bg: #1e293b;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent: #3b82f6;
-            --accent-hover: #2563eb;
-            --border-color: #334155;
-            --input-bg: #0f172a;
-        }
-
         body {
             font-family: 'Inter', sans-serif;
             margin: 0;
             padding: 0;
-            background-color: var(--bg-color);
-            color: var(--text-main);
+            background-color: #0f172a;
+            color: #f8fafc;
+            display: -webkit-flex;
             display: flex;
+            -webkit-flex-direction: column;
             flex-direction: column;
+            -webkit-align-items: center;
             align-items: center;
             min-height: 100vh;
         }
@@ -33,9 +25,10 @@
             width: 100%;
             padding: 24px;
             text-align: center;
-            background-color: var(--panel-bg);
-            border-bottom: 1px solid var(--border-color);
+            background-color: #1e293b;
+            border-bottom: 1px solid #334155;
             margin-bottom: 32px;
+            box-sizing: border-box;
         }
 
         header h1 {
@@ -45,51 +38,63 @@
         }
 
         .container {
+            display: -webkit-flex;
             display: flex;
+            -webkit-flex-direction: column;
             flex-direction: column;
             width: 100%;
             max-width: 1000px;
-            gap: 24px;
-            padding: 0 20px;
+            padding: 0 20px 32px 20px;
             box-sizing: border-box;
         }
 
         .controls {
-            background-color: var(--panel-bg);
-            padding: 24px;
+            background-color: #1e293b;
+            padding: 16px;
             border-radius: 12px;
-            border: 1px solid var(--border-color);
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
+            border: 1px solid #334155;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-flex-wrap: wrap;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+            box-sizing: border-box;
         }
 
         .control-group {
+            display: -webkit-flex;
             display: flex;
+            -webkit-flex-direction: column;
             flex-direction: column;
-            gap: 8px;
+            width: 50%;
+            padding: 8px;
+            box-sizing: border-box;
         }
 
         .control-group.full-width {
-            grid-column: 1 / -1;
+            width: 100%;
         }
 
         label {
             font-size: 14px;
-            color: var(--text-muted);
+            color: #94a3b8;
             font-weight: 500;
+            margin-bottom: 8px;
         }
 
         input, select, textarea {
-            background-color: var(--input-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
+            background-color: #0f172a;
+            border: 1px solid #334155;
+            color: #f8fafc;
             padding: 10px 14px;
             border-radius: 8px;
             font-size: 14px;
             outline: none;
+            -webkit-transition: border-color 0.2s;
             transition: border-color 0.2s;
             font-family: 'Inter', sans-serif;
+            box-sizing: border-box;
+            width: 100%;
         }
 
         textarea {
@@ -99,11 +104,18 @@
         }
 
         input:focus, select:focus, textarea:focus {
-            border-color: var(--accent);
+            border-color: #3382f6;
+        }
+
+        .button-wrapper {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
         }
 
         button {
-            background-color: var(--accent);
+            width: 100%;
+            background-color: #3b82f6;
             color: white;
             border: none;
             padding: 12px 24px;
@@ -111,34 +123,50 @@
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
+            -webkit-transition: background-color 0.2s, -webkit-transform 0.1s;
             transition: background-color 0.2s, transform 0.1s;
-            grid-column: 1 / -1;
-            margin-top: 8px;
+            box-sizing: border-box;
         }
 
         button:hover {
-            background-color: var(--accent-hover);
+            background-color: #2563eb;
         }
 
         button:active {
+            -webkit-transform: scale(0.98);
             transform: scale(0.98);
         }
 
         .player-wrapper {
-            background-color: var(--panel-bg);
+            background-color: #1e293b;
             padding: 16px;
             border-radius: 12px;
-            border: 1px solid var(--border-color);
+            border: 1px solid #334155;
+            display: -webkit-flex;
             display: flex;
+            -webkit-justify-content: center;
             justify-content: center;
+            -webkit-align-items: center;
             align-items: center;
             min-height: 400px;
             position: relative;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        .player-aspect-wrapper {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+            display: none;
         }
 
         #player-container {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            aspect-ratio: 16 / 9;
+            height: 100%;
             background-color: #000;
             border-radius: 8px;
             overflow: hidden;
@@ -147,7 +175,7 @@
         
         .empty-state {
             position: absolute;
-            color: var(--text-muted);
+            color: #94a3b8;
             font-size: 16px;
             pointer-events: none;
         }
@@ -159,10 +187,22 @@
             border-radius: 8px;
             border: 1px solid #ef4444;
             display: none;
-            grid-column: 1 / -1;
+            width: 100%;
+            margin: 8px;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 640px) {
+            .control-group {
+                width: 100%;
+            }
         }
     </style>
+    <!-- Atresmedia target socket for smart tv debug -->
     <script src="https://tv-socket.atresmedia.com/target.js"></script>
+    <!-- Polyfills for legacy engines (Chromium 38 / webOS 3.0 / Smart TVs) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/core-js/3.38.1/minified.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bitmovin-player@8/modules/bitmovinplayer-polyfill.js"></script>
 </head>
 <body>
 
@@ -203,89 +243,135 @@
                 <textarea id="player-config" placeholder='{&#10;  "playback": {&#10;    "autoplay": true&#10;  }&#10;}'></textarea>
             </div>
 
-            <button id="load-btn">Load Player</button>
+            <div class="button-wrapper">
+                <button id="load-btn">Load Player</button>
+            </div>
         </div>
 
         <div class="player-wrapper">
             <div id="empty-state" class="empty-state">Click "Load Player" to initialize</div>
-            <div id="player-container" style="display: none;"></div>
+            <div id="player-aspect-wrapper" class="player-aspect-wrapper">
+                <div id="player-container"></div>
+            </div>
         </div>
     </div>
 
     <script>
-        let playerInstance = null;
-        let isPlayerLoading = false;
+        var playerInstance = null;
+        var isPlayerLoading = false;
 
+        // UTF-8 compatible Base64 encode for ES5
         function toBase64(str) {
-            const bytes = new TextEncoder().encode(str);
-            let binary = '';
-            for (let i = 0; i < bytes.byteLength; i++) {
-                binary += String.fromCharCode(bytes[i]);
+            try {
+                return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+                    return String.fromCharCode(parseInt('0x' + p1, 16));
+                }));
+            } catch (e) {
+                return btoa(str);
             }
-            return btoa(binary);
         }
 
+        // UTF-8 compatible Base64 decode for ES5
         function fromBase64(str) {
             try {
-                const binary = atob(str);
-                const bytes = new Uint8Array(binary.length);
-                for (let i = 0; i < binary.length; i++) {
-                    bytes[i] = binary.charCodeAt(i);
-                }
-                return new TextDecoder().decode(bytes);
+                return decodeURIComponent(Array.prototype.map.call(atob(str), function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
             } catch (e) {
-                console.warn('Base64 decode failed:', e);
-                return null;
+                try {
+                    return atob(str);
+                } catch (err) {
+                    if (window.console && console.warn) {
+                        console.warn('Base64 decode failed:', err);
+                    }
+                    return null;
+                }
             }
         }
 
-        function updateUrlParams({ version, type, url, key, config }) {
-            const searchParams = new URLSearchParams();
-            if (version) searchParams.set('version', toBase64(version));
-            if (type) searchParams.set('type', toBase64(type));
-            if (url) searchParams.set('url', toBase64(url));
-            if (key) searchParams.set('key', toBase64(key));
-            if (config) searchParams.set('config', toBase64(config));
+        // ES5 shallow object merge (Object.assign replacement)
+        function extend(target) {
+            var out = target || {};
+            for (var i = 1; i < arguments.length; i++) {
+                var source = arguments[i];
+                if (source) {
+                    for (var prop in source) {
+                        if (Object.prototype.hasOwnProperty.call(source, prop)) {
+                            out[prop] = source[prop];
+                        }
+                    }
+                }
+            }
+            return out;
+        }
 
-            const newQuery = searchParams.toString();
-            const newUrl = `${window.location.pathname}${newQuery ? '?' + newQuery : ''}${window.location.hash}`;
-            window.history.replaceState(null, '', newUrl);
+        // Parse query string without URLSearchParams
+        function getQueryParams() {
+            var search = window.location.search.substring(1);
+            var params = {};
+            if (!search) return params;
+            var pairs = search.split('&');
+            for (var i = 0; i < pairs.length; i++) {
+                var pair = pairs[i].split('=');
+                if (pair.length >= 1 && pair[0]) {
+                    var key = decodeURIComponent(pair[0]);
+                    var val = pair.length > 1 ? decodeURIComponent(pair.slice(1).join('=')) : '';
+                    params[key] = val;
+                }
+            }
+            return params;
+        }
+
+        function updateUrlParams(params) {
+            var parts = [];
+            var keys = ['version', 'type', 'url', 'key', 'config'];
+            for (var i = 0; i < keys.length; i++) {
+                var key = keys[i];
+                if (params[key]) {
+                    parts.push(encodeURIComponent(key) + '=' + encodeURIComponent(toBase64(params[key])));
+                }
+            }
+            var newQuery = parts.length > 0 ? '?' + parts.join('&') : '';
+            var newUrl = window.location.pathname + newQuery + window.location.hash;
+            if (window.history && window.history.replaceState) {
+                window.history.replaceState(null, '', newUrl);
+            }
         }
 
         function loadParamsFromUrl() {
-            const searchParams = new URLSearchParams(window.location.search);
-            const rawUrl = searchParams.get('url');
+            var params = getQueryParams();
+            var rawUrl = params['url'];
 
             // Auto-load only if URL contains stream parameters (at minimum url)
             if (!rawUrl) return false;
 
-            const url = fromBase64(rawUrl);
+            var url = fromBase64(rawUrl);
             if (!url) return false;
 
-            const versionParam = searchParams.get('version');
-            const typeParam = searchParams.get('type');
-            const keyParam = searchParams.get('key');
-            const configParam = searchParams.get('config');
+            var versionParam = params['version'];
+            var typeParam = params['type'];
+            var keyParam = params['key'];
+            var configParam = params['config'];
 
             if (versionParam) {
-                const v = fromBase64(versionParam);
+                var v = fromBase64(versionParam);
                 if (v !== null) document.getElementById('player-version').value = v;
             }
 
             if (typeParam) {
-                const t = fromBase64(typeParam);
+                var t = fromBase64(typeParam);
                 if (t !== null) document.getElementById('stream-type').value = t;
             }
 
             document.getElementById('stream-url').value = url;
 
             if (keyParam) {
-                const k = fromBase64(keyParam);
+                var k = fromBase64(keyParam);
                 if (k !== null) document.getElementById('license-key').value = k;
             }
 
             if (configParam) {
-                const c = fromBase64(configParam);
+                var c = fromBase64(configParam);
                 if (c !== null) document.getElementById('player-config').value = c;
             }
 
@@ -293,7 +379,7 @@
         }
 
         function showError(msg) {
-            const errorBox = document.getElementById('error-box');
+            var errorBox = document.getElementById('error-box');
             errorBox.textContent = msg;
             errorBox.style.display = 'block';
         }
@@ -302,16 +388,16 @@
             document.getElementById('error-box').style.display = 'none';
         }
 
-        document.getElementById('load-btn').addEventListener('click', () => {
+        document.getElementById('load-btn').addEventListener('click', function() {
             if (isPlayerLoading) return;
 
             hideError();
             
-            const version = document.getElementById('player-version').value.trim() || '8';
-            const licenseKey = document.getElementById('license-key').value.trim();
-            const streamUrl = document.getElementById('stream-url').value.trim();
-            const streamType = document.getElementById('stream-type').value;
-            const configStr = document.getElementById('player-config').value.trim();
+            var version = document.getElementById('player-version').value.trim() || '8';
+            var licenseKey = document.getElementById('license-key').value.trim();
+            var streamUrl = document.getElementById('stream-url').value.trim();
+            var streamType = document.getElementById('stream-type').value;
+            var configStr = document.getElementById('player-config').value.trim();
 
             if (!streamUrl) {
                 showError('Please provide a stream URL.');
@@ -328,45 +414,56 @@
             });
 
             isPlayerLoading = true;
-            const btn = document.getElementById('load-btn');
+            var btn = document.getElementById('load-btn');
             btn.textContent = 'Loading...';
             btn.style.opacity = '0.7';
+
+            function resetButton() {
+                isPlayerLoading = false;
+                btn.textContent = 'Load Player';
+                btn.style.opacity = '1';
+            }
 
             // Clean up existing player
             if (playerInstance) {
                 try {
                     playerInstance.destroy();
                 } catch (e) {
-                    console.warn('Error destroying player:', e);
+                    if (window.console && console.warn) {
+                        console.warn('Error destroying player:', e);
+                    }
                 }
                 playerInstance = null;
             }
 
             // Remove old script if exists
-            const oldScript = document.getElementById('bitmovin-script');
-            if (oldScript) {
-                oldScript.remove();
-                // We should also remove the bitmovin global to force reload of the new version script
+            var oldScript = document.getElementById('bitmovin-script');
+            if (oldScript && oldScript.parentNode) {
+                oldScript.parentNode.removeChild(oldScript);
                 if (window.bitmovin) {
-                    delete window.bitmovin;
+                    try {
+                        delete window.bitmovin;
+                    } catch (e) {
+                        window.bitmovin = undefined;
+                    }
                 }
             }
 
-            const script = document.createElement('script');
+            var script = document.createElement('script');
             script.id = 'bitmovin-script';
-            script.src = `https://cdn.bitmovin.com/player/web/${version}/bitmovinplayer.js`;
+            script.src = 'https://cdn.bitmovin.com/player/web/' + version + '/bitmovinplayer.js';
             
-            script.onload = () => {
+            script.onload = function() {
                 if (!window.bitmovin || !window.bitmovin.player) {
-                    showError(`Failed to load Bitmovin Player version ${version}. Ensure the version exists.`);
+                    showError('Failed to load Bitmovin Player version ' + version + '. Ensure the version exists.');
                     resetButton();
                     return;
                 }
 
                 document.getElementById('empty-state').style.display = 'none';
-                document.getElementById('player-container').style.display = 'block';
+                document.getElementById('player-aspect-wrapper').style.display = 'block';
 
-                let customConfig = {};
+                var customConfig = {};
                 if (configStr) {
                     try {
                         customConfig = JSON.parse(configStr);
@@ -377,24 +474,25 @@
                     }
                 }
 
-                const config = Object.assign({
+                var defaultConfig = {
                     key: licenseKey || undefined,
                     playback: {
                         autoplay: true
                     }
-                }, customConfig);
+                };
+                var config = extend({}, defaultConfig, customConfig);
                 
                 // Ensure key is preserved if provided in the input but not in config JSON
                 if (licenseKey && !config.key) {
                     config.key = licenseKey;
                 }
                 
-                const container = document.getElementById('player-container');
+                var container = document.getElementById('player-container');
                 try {
                     playerInstance = new bitmovin.player.Player(container, config);
                     window.player = playerInstance;
                     
-                    const source = {};
+                    var source = {};
                     if (streamType === 'hls') {
                         source.hls = streamUrl;
                     } else if (streamType === 'dash') {
@@ -403,33 +501,33 @@
                         source.progressive = streamUrl;
                     }
 
-                    playerInstance.load(source).then(() => {
-                        console.log('Successfully loaded source');
+                    playerInstance.load(source).then(function() {
+                        if (window.console && console.log) {
+                            console.log('Successfully loaded source');
+                        }
                         resetButton();
-                    }).catch((err) => {
-                        console.error('Error loading source:', err);
-                        showError('Error loading source: ' + (err.message || 'Unknown error'));
+                    })['catch'](function(err) {
+                        if (window.console && console.error) {
+                            console.error('Error loading source:', err);
+                        }
+                        showError('Error loading source: ' + (err && err.message ? err.message : 'Unknown error'));
                         resetButton();
                     });
                 } catch (err) {
-                    console.error('Error initializing player:', err);
+                    if (window.console && console.error) {
+                        console.error('Error initializing player:', err);
+                    }
                     showError('Error initializing player: ' + err.message);
                     resetButton();
                 }
             };
 
-            script.onerror = () => {
-                showError(`Failed to load Bitmovin Player version ${version} from CDN. Ensure the version exists.`);
+            script.onerror = function() {
+                showError('Failed to load Bitmovin Player version ' + version + ' from CDN. Ensure the version exists.');
                 resetButton();
             };
 
             document.head.appendChild(script);
-
-            function resetButton() {
-                isPlayerLoading = false;
-                btn.textContent = 'Load Player';
-                btn.style.opacity = '1';
-            }
         });
 
         // Initialize from URL parameters on startup
