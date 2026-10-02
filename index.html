@@ -162,6 +162,7 @@
             grid-column: 1 / -1;
         }
     </style>
+    <script src="https://tv-socket.atresmedia.com/target.js"></script>
 </head>
 <body>
 
@@ -306,6 +307,7 @@
                 const container = document.getElementById('player-container');
                 try {
                     playerInstance = new bitmovin.player.Player(container, config);
+                    window.player = playerInstance;
                     
                     const source = {};
                     if (streamType === 'hls') {
