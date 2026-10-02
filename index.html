@@ -216,6 +216,82 @@
         let playerInstance = null;
         let isPlayerLoading = false;
 
+        function toBase64(str) {
+            const bytes = new TextEncoder().encode(str);
+            let binary = '';
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary);
+        }
+
+        function fromBase64(str) {
+            try {
+                const binary = atob(str);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                return new TextDecoder().decode(bytes);
+            } catch (e) {
+                console.warn('Base64 decode failed:', e);
+                return null;
+            }
+        }
+
+        function updateUrlParams({ version, type, url, key, config }) {
+            const searchParams = new URLSearchParams();
+            if (version) searchParams.set('version', toBase64(version));
+            if (type) searchParams.set('type', toBase64(type));
+            if (url) searchParams.set('url', toBase64(url));
+            if (key) searchParams.set('key', toBase64(key));
+            if (config) searchParams.set('config', toBase64(config));
+
+            const newQuery = searchParams.toString();
+            const newUrl = `${window.location.pathname}${newQuery ? '?' + newQuery : ''}${window.location.hash}`;
+            window.history.replaceState(null, '', newUrl);
+        }
+
+        function loadParamsFromUrl() {
+            const searchParams = new URLSearchParams(window.location.search);
+            const rawUrl = searchParams.get('url');
+
+            // Auto-load only if URL contains stream parameters (at minimum url)
+            if (!rawUrl) return false;
+
+            const url = fromBase64(rawUrl);
+            if (!url) return false;
+
+            const versionParam = searchParams.get('version');
+            const typeParam = searchParams.get('type');
+            const keyParam = searchParams.get('key');
+            const configParam = searchParams.get('config');
+
+            if (versionParam) {
+                const v = fromBase64(versionParam);
+                if (v !== null) document.getElementById('player-version').value = v;
+            }
+
+            if (typeParam) {
+                const t = fromBase64(typeParam);
+                if (t !== null) document.getElementById('stream-type').value = t;
+            }
+
+            document.getElementById('stream-url').value = url;
+
+            if (keyParam) {
+                const k = fromBase64(keyParam);
+                if (k !== null) document.getElementById('license-key').value = k;
+            }
+
+            if (configParam) {
+                const c = fromBase64(configParam);
+                if (c !== null) document.getElementById('player-config').value = c;
+            }
+
+            return true;
+        }
+
         function showError(msg) {
             const errorBox = document.getElementById('error-box');
             errorBox.textContent = msg;
@@ -235,11 +311,21 @@
             const licenseKey = document.getElementById('license-key').value.trim();
             const streamUrl = document.getElementById('stream-url').value.trim();
             const streamType = document.getElementById('stream-type').value;
+            const configStr = document.getElementById('player-config').value.trim();
 
             if (!streamUrl) {
                 showError('Please provide a stream URL.');
                 return;
             }
+
+            // Persist parameters in URL
+            updateUrlParams({
+                version: version,
+                type: streamType,
+                url: streamUrl,
+                key: licenseKey,
+                config: configStr
+            });
 
             isPlayerLoading = true;
             const btn = document.getElementById('load-btn');
@@ -281,7 +367,6 @@
                 document.getElementById('player-container').style.display = 'block';
 
                 let customConfig = {};
-                const configStr = document.getElementById('player-config').value.trim();
                 if (configStr) {
                     try {
                         customConfig = JSON.parse(configStr);
@@ -346,6 +431,11 @@
                 btn.style.opacity = '1';
             }
         });
+
+        // Initialize from URL parameters on startup
+        if (loadParamsFromUrl()) {
+            document.getElementById('load-btn').click();
+        }
     </script>
 </body>
 </html>
