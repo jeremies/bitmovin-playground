@@ -243,6 +243,11 @@
                 <textarea id="player-config" placeholder='{&#10;  "playback": {&#10;    "autoplay": true&#10;  }&#10;}'></textarea>
             </div>
 
+            <div class="control-group full-width">
+                <label for="custom-script">Custom Script (JS)</label>
+                <textarea id="custom-script" placeholder="// e.g. console.log(window.player.getSource());"></textarea>
+            </div>
+
             <div class="button-wrapper">
                 <button id="load-btn">Load Player</button>
             </div>
@@ -324,7 +329,7 @@
 
         function updateUrlParams(params) {
             var parts = [];
-            var keys = ['version', 'type', 'url', 'key', 'config'];
+            var keys = ['version', 'type', 'url', 'key', 'config', 'script'];
             for (var i = 0; i < keys.length; i++) {
                 var key = keys[i];
                 if (params[key]) {
@@ -352,6 +357,7 @@
             var typeParam = params['type'];
             var keyParam = params['key'];
             var configParam = params['config'];
+            var scriptParam = params['script'];
 
             if (versionParam) {
                 var v = fromBase64(versionParam);
@@ -373,6 +379,11 @@
             if (configParam) {
                 var c = fromBase64(configParam);
                 if (c !== null) document.getElementById('player-config').value = c;
+            }
+
+            if (scriptParam) {
+                var s = fromBase64(scriptParam);
+                if (s !== null) document.getElementById('custom-script').value = s;
             }
 
             return true;
@@ -398,6 +409,7 @@
             var streamUrl = document.getElementById('stream-url').value.trim();
             var streamType = document.getElementById('stream-type').value;
             var configStr = document.getElementById('player-config').value.trim();
+            var customScriptStr = document.getElementById('custom-script').value;
 
             if (!streamUrl) {
                 showError('Please provide a stream URL.');
@@ -410,7 +422,8 @@
                 type: streamType,
                 url: streamUrl,
                 key: licenseKey,
-                config: configStr
+                config: configStr,
+                script: customScriptStr.trim() ? customScriptStr : ''
             });
 
             isPlayerLoading = true;
@@ -504,6 +517,16 @@
                     playerInstance.load(source).then(function() {
                         if (window.console && console.log) {
                             console.log('Successfully loaded source');
+                        }
+                        if (customScriptStr && customScriptStr.trim()) {
+                            try {
+                                var runScript = new Function(customScriptStr);
+                                runScript();
+                            } catch (e) {
+                                if (window.console && console.error) {
+                                    console.error('Error executing custom script:', e);
+                                }
+                            }
                         }
                         resetButton();
                     })['catch'](function(err) {
