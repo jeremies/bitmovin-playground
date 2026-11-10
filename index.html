@@ -327,7 +327,7 @@
             return params;
         }
 
-        function updateUrlParams(params) {
+        function getTargetUrl(params) {
             var parts = [];
             var keys = ['version', 'type', 'url', 'key', 'config', 'script'];
             for (var i = 0; i < keys.length; i++) {
@@ -337,10 +337,7 @@
                 }
             }
             var newQuery = parts.length > 0 ? '?' + parts.join('&') : '';
-            var newUrl = window.location.pathname + newQuery + window.location.hash;
-            if (window.history && window.history.replaceState) {
-                window.history.replaceState(null, '', newUrl);
-            }
+            return window.location.pathname + newQuery + window.location.hash;
         }
 
         function loadParamsFromUrl() {
@@ -416,8 +413,16 @@
                 return;
             }
 
-            // Persist parameters in URL
-            updateUrlParams({
+            if (configStr) {
+                try {
+                    JSON.parse(configStr);
+                } catch (err) {
+                    showError('Invalid JSON in Player Configuration: ' + err.message);
+                    return;
+                }
+            }
+
+            var targetUrl = getTargetUrl({
                 version: version,
                 type: streamType,
                 url: streamUrl,
@@ -425,6 +430,35 @@
                 config: configStr,
                 script: customScriptStr.trim() ? customScriptStr : ''
             });
+
+            isPlayerLoading = true;
+            var btn = document.getElementById('load-btn');
+            btn.textContent = 'Loading...';
+            btn.style.opacity = '0.7';
+
+            var currentUrl = window.location.pathname + window.location.search + window.location.hash;
+            if (targetUrl === currentUrl) {
+                window.location.reload();
+            } else {
+                window.location.href = targetUrl;
+            }
+        });
+
+        function initPlayer() {
+            if (isPlayerLoading) return;
+
+            hideError();
+            
+            var version = document.getElementById('player-version').value.trim() || '8';
+            var licenseKey = document.getElementById('license-key').value.trim();
+            var streamUrl = document.getElementById('stream-url').value.trim();
+            var streamType = document.getElementById('stream-type').value;
+            var configStr = document.getElementById('player-config').value.trim();
+            var customScriptStr = document.getElementById('custom-script').value;
+
+            if (!streamUrl) {
+                return;
+            }
 
             isPlayerLoading = true;
             var btn = document.getElementById('load-btn');
@@ -551,11 +585,11 @@
             };
 
             document.head.appendChild(script);
-        });
+        }
 
         // Initialize from URL parameters on startup
         if (loadParamsFromUrl()) {
-            document.getElementById('load-btn').click();
+            initPlayer();
         }
     </script>
 </body>
