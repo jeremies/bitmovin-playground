@@ -325,8 +325,8 @@
             </div>
 
             <div class="control-group full-width">
-                <label for="license-key">License Key (Optional for localhost)</label>
-                <input type="text" id="license-key" value="" placeholder="Your Bitmovin Player License Key">
+                <label for="license-key">License Key</label>
+                <input type="text" id="license-key" value="0427d010-2bea-4b63-b02f-21340f73c0fb" placeholder="Your Bitmovin Player License Key">
             </div>
 
             <div class="control-group full-width">
@@ -379,6 +379,40 @@
             return out;
         }
 
+        var DEFAULT_LICENSE_KEY = '0427d010-2bea-4b63-b02f-21340f73c0fb';
+        var STORAGE_KEY_LICENSE = 'bitmovin_license_key';
+
+        function getStoredLicenseKey() {
+            try {
+                return localStorage.getItem(STORAGE_KEY_LICENSE);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function setStoredLicenseKey(key) {
+            try {
+                if (key && key !== DEFAULT_LICENSE_KEY) {
+                    localStorage.setItem(STORAGE_KEY_LICENSE, key);
+                } else {
+                    localStorage.removeItem(STORAGE_KEY_LICENSE);
+                }
+            } catch (e) {}
+        }
+
+        function initLicenseKey(urlKey) {
+            if (urlKey !== null && urlKey !== undefined && urlKey !== '') {
+                document.getElementById('license-key').value = urlKey;
+            } else {
+                var stored = getStoredLicenseKey();
+                if (stored) {
+                    document.getElementById('license-key').value = stored;
+                } else {
+                    document.getElementById('license-key').value = DEFAULT_LICENSE_KEY;
+                }
+            }
+        }
+
         function getTargetUrl(params) {
             var parts = [];
             var keys = ['version', 'type', 'url', 'key', 'config', 'script', 'chii'];
@@ -400,6 +434,14 @@
                 chiiCheckbox.checked = isChiiEnabled();
             }
 
+            var keyParam = params['key'];
+            var decodedKey = null;
+            if (keyParam) {
+                var k = fromBase64(keyParam);
+                if (k !== null) decodedKey = k;
+            }
+            initLicenseKey(decodedKey);
+
             var rawUrl = params['url'];
 
             // Auto-load only if URL contains stream parameters (at minimum url)
@@ -410,7 +452,6 @@
 
             var versionParam = params['version'];
             var typeParam = params['type'];
-            var keyParam = params['key'];
             var configParam = params['config'];
             var scriptParam = params['script'];
 
@@ -425,11 +466,6 @@
             }
 
             document.getElementById('stream-url').value = url;
-
-            if (keyParam) {
-                var k = fromBase64(keyParam);
-                if (k !== null) document.getElementById('license-key').value = k;
-            }
 
             if (configParam) {
                 var c = fromBase64(configParam);
@@ -460,7 +496,14 @@
             hideError();
             
             var version = document.getElementById('player-version').value.trim() || '8';
-            var licenseKey = document.getElementById('license-key').value.trim();
+            var rawLicenseKey = document.getElementById('license-key').value.trim();
+            var licenseKey = rawLicenseKey || DEFAULT_LICENSE_KEY;
+            if (!rawLicenseKey) {
+                document.getElementById('license-key').value = DEFAULT_LICENSE_KEY;
+                setStoredLicenseKey(null);
+            } else {
+                setStoredLicenseKey(licenseKey);
+            }
             var streamUrl = document.getElementById('stream-url').value.trim();
             var streamType = document.getElementById('stream-type').value;
             var configStr = document.getElementById('player-config').value.trim();
@@ -510,7 +553,7 @@
             hideError();
             
             var version = document.getElementById('player-version').value.trim() || '8';
-            var licenseKey = document.getElementById('license-key').value.trim();
+            var licenseKey = document.getElementById('license-key').value.trim() || DEFAULT_LICENSE_KEY;
             var streamUrl = document.getElementById('stream-url').value.trim();
             var streamType = document.getElementById('stream-type').value;
             var configStr = document.getElementById('player-config').value.trim();
