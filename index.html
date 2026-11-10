@@ -197,9 +197,100 @@
                 width: 100%;
             }
         }
+
+        .checkbox-group {
+            padding: 8px;
+        }
+
+        .checkbox-label {
+            display: -webkit-inline-flex;
+            display: inline-flex;
+            -webkit-align-items: center;
+            align-items: center;
+            cursor: pointer;
+            color: #f8fafc;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin: 0 10px 0 0;
+            cursor: pointer;
+            accent-color: #3b82f6;
+            vertical-align: middle;
+            padding: 0;
+        }
     </style>
-    <!-- Atresmedia target socket for smart tv debug -->
-    <script src="https://tv-socket.atresmedia.com/target.js"></script>
+    <!-- Utilities & Conditional Atresmedia target socket for smart tv debug -->
+    <script>
+        // UTF-8 compatible Base64 encode for ES5
+        function toBase64(str) {
+            try {
+                return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+                    return String.fromCharCode(parseInt('0x' + p1, 16));
+                }));
+            } catch (e) {
+                return btoa(str);
+            }
+        }
+
+        // UTF-8 compatible Base64 decode for ES5
+        function fromBase64(str) {
+            try {
+                return decodeURIComponent(Array.prototype.map.call(atob(str), function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+            } catch (e) {
+                try {
+                    return atob(str);
+                } catch (err) {
+                    if (window.console && console.warn) {
+                        console.warn('Base64 decode failed:', err);
+                    }
+                    return null;
+                }
+            }
+        }
+
+        // Parse query string without URLSearchParams
+        function getQueryParams() {
+            var search = window.location.search.substring(1);
+            var params = {};
+            if (!search) return params;
+            var pairs = search.split('&');
+            for (var i = 0; i < pairs.length; i++) {
+                var pair = pairs[i].split('=');
+                if (pair.length >= 1 && pair[0]) {
+                    var key = decodeURIComponent(pair[0]);
+                    var val = pair.length > 1 ? decodeURIComponent(pair.slice(1).join('=')) : '';
+                    params[key] = val;
+                }
+            }
+            return params;
+        }
+
+        function isChiiEnabled() {
+            var params = getQueryParams();
+            var raw = params['chii'];
+            if (!raw) return true;
+            if (raw === 'false' || raw === '0') return false;
+            var decoded = fromBase64(raw);
+            if (decoded === 'false' || decoded === '0') return false;
+            return true;
+        }
+
+        if (isChiiEnabled()) {
+            var chiiScript = document.createElement('script');
+            chiiScript.id = 'tv-socket-script';
+            chiiScript.src = 'https://tv-socket.atresmedia.com/target.js';
+            document.head.appendChild(chiiScript);
+        }
+    </script>
     <!-- Polyfills for legacy engines (Chromium 38 / webOS 3.0 / Smart TVs) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/core-js/3.38.1/minified.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bitmovin-player@8/modules/bitmovinplayer-polyfill.js"></script>
@@ -248,6 +339,13 @@
                 <textarea id="custom-script" placeholder="// e.g. console.log(window.player.getSource());"></textarea>
             </div>
 
+            <div class="control-group full-width checkbox-group">
+                <label class="checkbox-label" for="include-chii">
+                    <input type="checkbox" id="include-chii" checked>
+                    <span>Include Chii (remote debugger)</span>
+                </label>
+            </div>
+
             <div class="button-wrapper">
                 <button id="load-btn">Load Player</button>
             </div>
@@ -265,35 +363,6 @@
         var playerInstance = null;
         var isPlayerLoading = false;
 
-        // UTF-8 compatible Base64 encode for ES5
-        function toBase64(str) {
-            try {
-                return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
-                    return String.fromCharCode(parseInt('0x' + p1, 16));
-                }));
-            } catch (e) {
-                return btoa(str);
-            }
-        }
-
-        // UTF-8 compatible Base64 decode for ES5
-        function fromBase64(str) {
-            try {
-                return decodeURIComponent(Array.prototype.map.call(atob(str), function(c) {
-                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join(''));
-            } catch (e) {
-                try {
-                    return atob(str);
-                } catch (err) {
-                    if (window.console && console.warn) {
-                        console.warn('Base64 decode failed:', err);
-                    }
-                    return null;
-                }
-            }
-        }
-
         // ES5 shallow object merge (Object.assign replacement)
         function extend(target) {
             var out = target || {};
@@ -310,26 +379,9 @@
             return out;
         }
 
-        // Parse query string without URLSearchParams
-        function getQueryParams() {
-            var search = window.location.search.substring(1);
-            var params = {};
-            if (!search) return params;
-            var pairs = search.split('&');
-            for (var i = 0; i < pairs.length; i++) {
-                var pair = pairs[i].split('=');
-                if (pair.length >= 1 && pair[0]) {
-                    var key = decodeURIComponent(pair[0]);
-                    var val = pair.length > 1 ? decodeURIComponent(pair.slice(1).join('=')) : '';
-                    params[key] = val;
-                }
-            }
-            return params;
-        }
-
         function getTargetUrl(params) {
             var parts = [];
-            var keys = ['version', 'type', 'url', 'key', 'config', 'script'];
+            var keys = ['version', 'type', 'url', 'key', 'config', 'script', 'chii'];
             for (var i = 0; i < keys.length; i++) {
                 var key = keys[i];
                 if (params[key]) {
@@ -342,6 +394,12 @@
 
         function loadParamsFromUrl() {
             var params = getQueryParams();
+
+            var chiiCheckbox = document.getElementById('include-chii');
+            if (chiiCheckbox) {
+                chiiCheckbox.checked = isChiiEnabled();
+            }
+
             var rawUrl = params['url'];
 
             // Auto-load only if URL contains stream parameters (at minimum url)
@@ -407,6 +465,7 @@
             var streamType = document.getElementById('stream-type').value;
             var configStr = document.getElementById('player-config').value.trim();
             var customScriptStr = document.getElementById('custom-script').value;
+            var includeChii = document.getElementById('include-chii').checked;
 
             if (!streamUrl) {
                 showError('Please provide a stream URL.');
@@ -428,7 +487,8 @@
                 url: streamUrl,
                 key: licenseKey,
                 config: configStr,
-                script: customScriptStr.trim() ? customScriptStr : ''
+                script: customScriptStr.trim() ? customScriptStr : '',
+                chii: includeChii ? 'true' : 'false'
             });
 
             isPlayerLoading = true;
